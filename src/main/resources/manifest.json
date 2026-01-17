@@ -1,0 +1,19 @@
+{
+    "Group": "com.sl",
+    "Name": "SLParty",
+    "Version": "1.0.0",
+    "Description": "Party system plugin - create groups and see teammates on compass",
+    "Main": "com.sl.party.SLPartyPlugin",
+    "Authors": [
+        {
+            "Name": "SL"
+        }
+    ],
+    "ServerVersion": "*",
+    "Dependencies": {
+        "Hytale:EntityModule": "*"
+    },
+    "OptionalDependencies": {},
+    "IncludesAssetPack": false,
+    "DisabledByDefault": false
+}
