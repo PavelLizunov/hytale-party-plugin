@@ -21,6 +21,7 @@ public class PartyCommand extends CommandBase {
         addSubCommand(new PartyJoinSubCommand(partyCache));
         addSubCommand(new PartyPublicSubCommand(partyCache));
         addSubCommand(new PartyInviteSubCommand(partyCache));
+        addSubCommand(new PartyKickSubCommand(partyCache));
         addSubCommand(new PartyDisbandSubCommand(partyCache));
         addSubCommand(new PartyLeaveSubCommand(partyCache));
         addSubCommand(new PartyChatSubCommand(partyCache));
@@ -41,6 +42,7 @@ public class PartyCommand extends CommandBase {
         commandContext.sendMessage(Message.raw("/party info - Show party information").color(java.awt.Color.WHITE));
         commandContext.sendMessage(Message.raw("/party invite <player> - Invite a player").color(java.awt.Color.WHITE));
         commandContext.sendMessage(Message.raw("/party join <leader> - Join a party").color(java.awt.Color.WHITE));
+        commandContext.sendMessage(Message.raw("/party kick <player> - Kick a player (leader only)").color(java.awt.Color.WHITE));
         commandContext.sendMessage(Message.raw("/party leave - Leave your party").color(java.awt.Color.WHITE));
         commandContext.sendMessage(Message.raw("/party disband - Disband your party").color(java.awt.Color.WHITE));
         commandContext.sendMessage(Message.raw("/party public - Toggle public/private").color(java.awt.Color.WHITE));

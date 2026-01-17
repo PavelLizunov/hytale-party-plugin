@@ -20,6 +20,7 @@ Party system plugin for Hytale servers. Allows players to create groups and see 
 | `/party info` | Show information about your current party |
 | `/party invite <player>` | Invite a player to your party |
 | `/party join <leader>` | Join a player's party |
+| `/party kick <player>` | Kick a player from party (leader only) |
 | `/party leave` | Leave your current party |
 | `/party disband` | Disband your party (leader only) |
 | `/party public` | Toggle party between public/private |
@@ -89,6 +90,7 @@ SLParty/
 │   │       ├── PartyLeaveSubCommand.java
 │   │       ├── PartyDisbandSubCommand.java
 │   │       ├── PartyInviteSubCommand.java
+│   │       ├── PartyKickSubCommand.java
 │   │       ├── PartyInfoSubCommand.java
 │   │       ├── PartyPublicSubCommand.java
 │   │       └── PartyChatSubCommand.java
