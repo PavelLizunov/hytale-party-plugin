@@ -9,8 +9,10 @@ import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.SoundUtil;
 import com.hypixel.hytale.server.core.util.NotificationUtil;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -22,6 +24,7 @@ public class Party {
     private final UUID id;
     private final UUID ownerId;
     private final Set<UUID> members;
+    private final Map<UUID, String> memberNames;  // Store usernames for offline display
     private final Set<UUID> invites;
     private boolean publish;
 
@@ -37,6 +40,7 @@ public class Party {
         this.ownerId = ownerId;
         this.members = new HashSet<>();
         this.members.add(ownerId);
+        this.memberNames = new HashMap<>();
         this.invites = new HashSet<>();
         this.publish = false;
     }
@@ -87,6 +91,29 @@ public class Party {
     public void addMember(UUID playerId) {
         if (playerId != null) {
             members.add(playerId);
+        }
+    }
+
+    public void addMember(UUID playerId, String username) {
+        if (playerId != null) {
+            members.add(playerId);
+            if (username != null) {
+                memberNames.put(playerId, username);
+            }
+        }
+    }
+
+    public String getMemberName(UUID playerId) {
+        return memberNames.get(playerId);
+    }
+
+    public Map<UUID, String> getMemberNames() {
+        return memberNames;
+    }
+
+    public void setMemberName(UUID playerId, String username) {
+        if (playerId != null && username != null) {
+            memberNames.put(playerId, username);
         }
     }
 

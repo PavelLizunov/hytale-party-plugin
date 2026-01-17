@@ -10,6 +10,7 @@ import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,6 +42,11 @@ public class PartyStorage {
                 data.members = new ArrayList<>();
                 for (UUID member : party.getMembers()) {
                     data.members.add(member.toString());
+                }
+                // Save member names
+                data.memberNames = new HashMap<>();
+                for (Map.Entry<UUID, String> entry : party.getMemberNames().entrySet()) {
+                    data.memberNames.put(entry.getKey().toString(), entry.getValue());
                 }
                 data.isPublic = party.isPublish();
                 partyDataList.add(data);
@@ -92,6 +98,14 @@ public class PartyStorage {
                             }
                         }
 
+                        // Load member names
+                        if (data.memberNames != null) {
+                            for (Map.Entry<String, String> entry : data.memberNames.entrySet()) {
+                                UUID memberId = UUID.fromString(entry.getKey());
+                                party.setMemberName(memberId, entry.getValue());
+                            }
+                        }
+
                         parties.add(party);
                     } catch (Exception e) {
                         logger.log(Level.WARNING, "Failed to load party: " + e.getMessage());
@@ -114,6 +128,7 @@ public class PartyStorage {
         String id;
         String leaderId;
         List<String> members;
+        Map<String, String> memberNames;  // UUID -> username mapping
         boolean isPublic;
     }
 }

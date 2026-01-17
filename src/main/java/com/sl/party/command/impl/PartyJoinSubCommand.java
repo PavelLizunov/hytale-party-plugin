@@ -87,7 +87,7 @@ public class PartyJoinSubCommand extends AbstractAsyncCommand {
                 party.removeInvite(playerRef.getUuid());
             }
 
-            party.addMember(playerRef.getUuid());
+            party.addMember(playerRef.getUuid(), playerRef.getUsername());
             partyCache.save();  // Persist change
 
             // Update map filters for all party members to exclude each other from default icons

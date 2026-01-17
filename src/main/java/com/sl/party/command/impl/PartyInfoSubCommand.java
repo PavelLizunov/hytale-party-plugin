@@ -58,22 +58,44 @@ public class PartyInfoSubCommand extends AbstractAsyncCommand {
                 return;
             }
 
-            // Get leader name
+            // Get leader name (try online first, then stored name)
             PlayerRef leaderRef = Universe.get().getPlayer(party.getOwnerId());
-            String leaderName = leaderRef != null ? leaderRef.getUsername() : "Unknown";
+            String leaderName;
+            if (leaderRef != null && leaderRef.isValid()) {
+                leaderName = leaderRef.getUsername();
+                // Update stored name if online
+                party.setMemberName(party.getOwnerId(), leaderName);
+            } else {
+                leaderName = party.getMemberName(party.getOwnerId());
+                if (leaderName == null) leaderName = "Unknown";
+            }
 
             playerRef.sendMessage(Message.raw("=== Party Info ===").color(Color.YELLOW));
             playerRef.sendMessage(Message.raw("Leader: " + leaderName).color(Color.WHITE));
             playerRef.sendMessage(Message.raw("Members (" + party.getMembers().size() + "):").color(Color.WHITE));
 
+            boolean needsSave = false;
             for (UUID memberId : party.getMembers()) {
                 PlayerRef memberRef = Universe.get().getPlayer(memberId);
                 if (memberRef != null && memberRef.isValid()) {
+                    // Update stored name for online players (keeps names fresh)
+                    String currentName = memberRef.getUsername();
+                    if (!currentName.equals(party.getMemberName(memberId))) {
+                        party.setMemberName(memberId, currentName);
+                        needsSave = true;
+                    }
                     String status = memberId.equals(party.getOwnerId()) ? " [Leader]" : "";
-                    playerRef.sendMessage(Message.raw("  - " + memberRef.getUsername() + status).color(Color.GREEN));
+                    playerRef.sendMessage(Message.raw("  - " + currentName + status).color(Color.GREEN));
                 } else {
-                    playerRef.sendMessage(Message.raw("  - (offline)").color(Color.GRAY));
+                    // Use stored name for offline players
+                    String offlineName = party.getMemberName(memberId);
+                    if (offlineName == null) offlineName = memberId.toString().substring(0, 8);
+                    String status = memberId.equals(party.getOwnerId()) ? " [Leader]" : "";
+                    playerRef.sendMessage(Message.raw("  - " + offlineName + status + " (offline)").color(Color.GRAY));
                 }
+            }
+            if (needsSave) {
+                partyCache.save();
             }
 
             String publicStatus = party.isPublish() ? "Public" : "Private";

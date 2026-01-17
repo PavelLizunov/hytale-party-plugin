@@ -4,11 +4,10 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
-import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
-import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractAsyncCommand;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.sl.party.cache.PartyCache;
@@ -18,18 +17,19 @@ import com.sl.party.model.Party;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 
 import java.awt.*;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class PartyKickSubCommand extends AbstractAsyncCommand {
 
     private final PartyCache partyCache;
-    private RequiredArg<PlayerRef> targetRefArg;
 
     public PartyKickSubCommand(PartyCache partyCache) {
         super("kick", "Kick a player from your party");
         this.partyCache = partyCache;
 
-        this.targetRefArg = this.withRequiredArg("player", "Player to kick", ArgTypes.PLAYER_REF);
+        setAllowsExtraArguments(true);
     }
 
     @Override
@@ -67,42 +67,78 @@ public class PartyKickSubCommand extends AbstractAsyncCommand {
                 return;
             }
 
-            final PlayerRef targetRef = commandContext.get(targetRefArg);
-            if (targetRef == null) {
-                playerRef.sendMessage(MessagesConfig.PLAYER_NOT_FOUND);
+            // Parse player name from input: "/party kick PlayerName"
+            final String[] parts = commandContext.getInputString().split(" ");
+            if (parts.length < 3) {
+                playerRef.sendMessage(Message.raw("Usage: /party kick <player>").color(Color.RED));
                 return;
             }
+            final String targetName = parts[2];
 
-            if (targetRef.getUuid().equals(playerRef.getUuid())) {
-                playerRef.sendMessage(Message.raw("You cannot kick yourself!").color(Color.RED));
-                return;
+            // Find member by name (case-insensitive)
+            UUID targetUuid = null;
+            String actualName = null;
+            for (Map.Entry<UUID, String> entry : party.getMemberNames().entrySet()) {
+                if (entry.getValue().equalsIgnoreCase(targetName)) {
+                    targetUuid = entry.getKey();
+                    actualName = entry.getValue();
+                    break;
+                }
             }
 
-            if (!party.isMember(targetRef.getUuid())) {
-                playerRef.sendMessage(Message.raw(targetRef.getUsername() + " is not in your party!").color(Color.RED));
-                return;
-            }
-
-            // Remove the player from party
-            party.removeMember(targetRef.getUuid());
-            partyCache.save();
-
-            // Update map filter for kicked player
-            if (targetRef.isValid()) {
-                for (Player p : world.getPlayers()) {
-                    if (p != null && targetRef.getUuid().equals(p.getUuid())) {
-                        PartyMapFilterListener.updateFilter(p);
+            // If not found by name, try to find by UUID (partial match)
+            if (targetUuid == null) {
+                for (UUID memberId : party.getMembers()) {
+                    if (memberId.toString().toLowerCase().startsWith(targetName.toLowerCase())) {
+                        targetUuid = memberId;
+                        actualName = party.getMemberName(memberId);
+                        if (actualName == null) {
+                            actualName = memberId.toString().substring(0, 8);
+                        }
                         break;
                     }
                 }
             }
 
+            if (targetUuid == null) {
+                playerRef.sendMessage(Message.raw("Player '" + targetName + "' not found in your party!").color(Color.RED));
+                return;
+            }
+
+            if (targetUuid.equals(playerRef.getUuid())) {
+                playerRef.sendMessage(Message.raw("You cannot kick yourself!").color(Color.RED));
+                return;
+            }
+
+            if (!party.isMember(targetUuid)) {
+                playerRef.sendMessage(Message.raw(actualName + " is not in your party!").color(Color.RED));
+                return;
+            }
+
+            // Remove the player from party
+            party.removeMember(targetUuid);
+            partyCache.save();
+
+            // Check if target is online
+            PlayerRef targetRef = Universe.get().getPlayer(targetUuid);
+
+            // Update map filter for kicked player if online
+            if (targetRef != null && targetRef.isValid()) {
+                for (Player p : world.getPlayers()) {
+                    if (p != null && targetUuid.equals(p.getUuid())) {
+                        PartyMapFilterListener.updateFilter(p);
+                        break;
+                    }
+                }
+                // Notify kicked player if online
+                targetRef.sendMessage(Message.raw("You have been kicked from the party").color(Color.RED));
+            }
+
             // Update filters for remaining party members
             PartyMapFilterListener.updatePartyFilters(party, world);
 
-            // Notify
-            party.sendMessage(Message.raw(targetRef.getUsername() + " was kicked from the party").color(Color.YELLOW));
-            targetRef.sendMessage(Message.raw("You have been kicked from the party").color(Color.RED));
+            // Notify party
+            party.sendMessage(Message.raw(actualName + " was kicked from the party").color(Color.YELLOW));
         });
 
         return CompletableFuture.completedFuture(null);

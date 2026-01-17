@@ -53,6 +53,8 @@ public class PartyCreateSubCommand extends AbstractAsyncCommand {
             }
 
             final Party party = new Party(playerRef.getUuid());
+            // Store creator's username for offline display
+            party.setMemberName(playerRef.getUuid(), playerRef.getUsername());
 
             partyCache.add(party);
             playerRef.sendMessage(MessagesConfig.PARTY_CREATED);
