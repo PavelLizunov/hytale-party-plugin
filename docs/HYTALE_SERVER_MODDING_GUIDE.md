@@ -1,21 +1,21 @@
 # Hytale Server-Side Modding Guide
 
-Краткий гайд по созданию серверных плагинов для Hytale на основе практического опыта.
+A practical guide to creating server-side plugins for Hytale based on hands-on development experience.
 
-## Содержание
+## Table of Contents
 
-1. [Настройка проекта](#настройка-проекта)
-2. [Структура плагина](#структура-плагина)
-3. [Команды](#команды)
-4. [События](#события)
-5. [Работа с игроками](#работа-с-игроками)
-6. [Маркеры на карте и компасе](#маркеры-на-карте-и-компасе)
-7. [Полезные API](#полезные-api)
-8. [Советы и подводные камни](#советы-и-подводные-камни)
+1. [Project Setup](#project-setup)
+2. [Plugin Structure](#plugin-structure)
+3. [Commands](#commands)
+4. [Events](#events)
+5. [Working with Players](#working-with-players)
+6. [Map and Compass Markers](#map-and-compass-markers)
+7. [Useful APIs](#useful-apis)
+8. [Tips and Pitfalls](#tips-and-pitfalls)
 
 ---
 
-## Настройка проекта
+## Project Setup
 
 ### build.gradle.kts
 
@@ -40,7 +40,7 @@ repositories {
 dependencies {
     compileOnly(files("libs/HytaleServer.jar"))
 
-    // Gson для JSON (уже есть в Hytale)
+    // Gson for JSON (already included in Hytale)
     compileOnly("com.google.code.gson:gson:2.10.1")
 }
 
@@ -49,12 +49,12 @@ tasks.jar {
 }
 ```
 
-### Структура папок
+### Folder Structure
 
 ```
 my-plugin/
 ├── libs/
-│   └── HytaleServer.jar      # Скопировать с сервера
+│   └── HytaleServer.jar      # Copy from server
 ├── src/main/
 │   ├── java/com/example/myplugin/
 │   │   └── MyPlugin.java
@@ -66,7 +66,7 @@ my-plugin/
 
 ---
 
-## Структура плагина
+## Plugin Structure
 
 ### manifest.json
 
@@ -83,7 +83,7 @@ my-plugin/
 }
 ```
 
-### Главный класс плагина
+### Main Plugin Class
 
 ```java
 package com.example.myplugin;
@@ -108,25 +108,25 @@ public class MyPlugin extends JavaPlugin {
 
     @Override
     protected void setup() {
-        // Вызывается при загрузке плагина
+        // Called when plugin is loading
         getLogger().at(Level.INFO).log("Plugin setup...");
 
-        // Регистрация команд
+        // Register commands
         getCommandRegistry().registerCommand(new MyCommand());
 
-        // Регистрация событий
+        // Register events
         getEventRegistry().register(SomeEvent.class, this::onEvent);
     }
 
     @Override
     protected void start() {
-        // Вызывается после setup всех плагинов
+        // Called after all plugins are set up
         getLogger().at(Level.INFO).log("Plugin started!");
     }
 
     @Override
     protected void shutdown() {
-        // Вызывается при остановке сервера
+        // Called when server is stopping
         getLogger().at(Level.INFO).log("Plugin shutdown...");
     }
 }
@@ -134,9 +134,9 @@ public class MyPlugin extends JavaPlugin {
 
 ---
 
-## Команды
+## Commands
 
-### Синхронная команда
+### Synchronous Command
 
 ```java
 import com.hypixel.hytale.server.core.command.system.CommandContext;
@@ -149,7 +149,7 @@ public class MyCommand extends CommandBase {
     public MyCommand() {
         super("mycommand", "Description of command");
 
-        // Добавление подкоманд
+        // Add subcommands
         addSubCommand(new MySubCommand());
     }
 
@@ -160,12 +160,12 @@ public class MyCommand extends CommandBase {
 
     @Override
     protected boolean canGeneratePermission() {
-        return false; // false = все могут использовать
+        return false; // false = everyone can use
     }
 }
 ```
 
-### Асинхронная команда с аргументами
+### Asynchronous Command with Arguments
 
 ```java
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractAsyncCommand;
@@ -197,15 +197,15 @@ public class MyAsyncCommand extends AbstractAsyncCommand {
             return CompletableFuture.completedFuture(null);
         }
 
-        // Выполнение в мире (thread-safe)
+        // Execute in world thread (thread-safe)
         Ref<EntityStore> ref = player.getReference();
         Store<EntityStore> store = ref.getStore();
         World world = store.getExternalData().getWorld();
 
         world.execute(() -> {
-            // Код здесь выполняется в потоке мира
+            // Code here runs in world thread
             PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
-            // ... логика
+            // ... logic
         });
 
         return CompletableFuture.completedFuture(null);
@@ -215,21 +215,21 @@ public class MyAsyncCommand extends AbstractAsyncCommand {
 
 ---
 
-## События
+## Events
 
-### Регистрация событий
+### Registering Events
 
 ```java
-// В setup() плагина:
+// In plugin setup():
 
-// Событие для конкретного мира/контекста
+// Event for specific world/context
 getEventRegistry().register(PlayerDisconnectEvent.class, this::onPlayerDisconnect);
 
-// Глобальное событие
+// Global event
 getEventRegistry().registerGlobal(AddWorldEvent.class, this::onWorldAdded);
 ```
 
-### Обработчики
+### Event Handlers
 
 ```java
 private void onPlayerDisconnect(PlayerDisconnectEvent event) {
@@ -237,71 +237,71 @@ private void onPlayerDisconnect(PlayerDisconnectEvent event) {
     if (playerRef == null) return;
 
     UUID uuid = playerRef.getUuid();
-    // Обработка выхода игрока
+    // Handle player disconnect
 }
 
 private void onWorldAdded(AddWorldEvent event) {
     World world = event.getWorld();
-    // Регистрация провайдеров для нового мира
+    // Register providers for new world
     world.getWorldMapManager().addMarkerProvider("myMarkers", MyMarkerProvider.INSTANCE);
 }
 ```
 
 ---
 
-## Работа с игроками
+## Working with Players
 
-### Получение данных игрока
+### Getting Player Data
 
 ```java
-// Из CommandContext
+// From CommandContext
 Player player = (Player) ctx.sender();
 
-// UUID игрока (deprecated но работает)
+// Player UUID (deprecated but works)
 UUID uuid = player.getUuid();
 
-// PlayerRef - основной способ работы с игроком
+// PlayerRef - main way to work with players
 PlayerRef playerRef = player.getPlayerRef(); // deprecated
-// Или через store:
+// Or through store:
 PlayerRef playerRef = store.getComponent(reference, PlayerRef.getComponentType());
 
-// Имя игрока
+// Player name
 String name = playerRef.getUsername();
 
-// Позиция
+// Position
 Transform transform = playerRef.getTransform();
 Vector3d position = transform.getPosition();
 
-// Отправка сообщения
+// Send message
 playerRef.sendMessage(Message.raw("Hello!").color(Color.GREEN));
 ```
 
-### Поиск игрока по UUID
+### Finding Player by UUID
 
 ```java
 import com.hypixel.hytale.server.core.universe.Universe;
 
 PlayerRef playerRef = Universe.get().getPlayer(uuid);
 if (playerRef != null && playerRef.isValid()) {
-    // Игрок онлайн
+    // Player is online
 }
 ```
 
-### Все игроки в мире
+### All Players in World
 
 ```java
-// Все PlayerRef в мире
+// All PlayerRefs in world
 Collection<PlayerRef> playerRefs = world.getPlayerRefs();
 
-// Все Player объекты (deprecated)
+// All Player objects (deprecated)
 List<Player> players = world.getPlayers();
 ```
 
 ---
 
-## Маркеры на карте и компасе
+## Map and Compass Markers
 
-### MarkerProvider для компаса
+### MarkerProvider for Compass
 
 ```java
 import com.hypixel.hytale.server.core.universe.world.worldmap.WorldMapManager;
@@ -319,18 +319,18 @@ public class MyMarkerProvider implements WorldMapManager.MarkerProvider {
         Player viewer = tracker.getPlayer();
         if (viewer == null) return;
 
-        // Создание маркера
+        // Create marker
         MapMarker marker = new MapMarker(
-            "unique-marker-id",           // ID маркера
-            "Marker Name",                // Отображаемое имя
-            "Player.png",                 // Иконка (Player.png, Spawn.png, Death.png, Home.png, Warp.png)
-            PositionUtil.toTransformPacket(transform),  // Позиция
-            null                          // Context menu (null = нет)
+            "unique-marker-id",           // Marker ID
+            "Marker Name",                // Display name
+            "Player.png",                 // Icon (Player.png, Spawn.png, Death.png, Home.png, Warp.png)
+            PositionUtil.toTransformPacket(transform),  // Position
+            null                          // Context menu (null = none)
         );
 
-        // ВАЖНО: viewRadius = -1 для отображения на КОМПАСЕ
+        // IMPORTANT: viewRadius = -1 to show on COMPASS
         tracker.trySendMarker(
-            -1,              // -1 = показывать на компасе, >0 = только на карте в радиусе
+            -1,              // -1 = show on compass, >0 = map only within radius
             playerChunkX,
             playerChunkZ,
             marker
@@ -339,35 +339,35 @@ public class MyMarkerProvider implements WorldMapManager.MarkerProvider {
 }
 ```
 
-### Регистрация провайдера
+### Registering Provider
 
 ```java
-// При добавлении мира
+// When world is added
 private void onWorldAdded(AddWorldEvent event) {
     event.getWorld().getWorldMapManager()
         .addMarkerProvider("myPlugin:markers", MyMarkerProvider.INSTANCE);
 }
 ```
 
-### Фильтр игроков на карте
+### Player Map Filter
 
 ```java
-// Исключить определённых игроков из стандартных иконок на карте
+// Exclude certain players from default map icons
 player.getWorldMapTracker().setPlayerMapFilter(playerRef -> {
-    // return true = скрыть этого игрока
-    // return false = показать
+    // return true = hide this player
+    // return false = show
     return shouldHide(playerRef.getUuid());
 });
 
-// Сбросить фильтр
+// Reset filter
 player.getWorldMapTracker().setPlayerMapFilter(null);
 ```
 
 ---
 
-## Полезные API
+## Useful APIs
 
-### Отправка уведомлений
+### Sending Notifications
 
 ```java
 import com.hypixel.hytale.server.core.util.NotificationUtil;
@@ -383,7 +383,7 @@ NotificationUtil.sendNotification(
 );
 ```
 
-### Воспроизведение звука
+### Playing Sounds
 
 ```java
 import com.hypixel.hytale.server.core.universe.world.SoundUtil;
@@ -391,43 +391,43 @@ import com.hypixel.hytale.protocol.SoundCategory;
 
 SoundUtil.playSoundEvent2dToPlayer(
     playerRef,
-    soundIndex,           // Индекс звука
-    SoundCategory.UI,     // Категория
+    soundIndex,           // Sound index
+    SoundCategory.UI,     // Category
     1.0f,                 // Volume
     1.0f                  // Pitch
 );
 ```
 
-### Работа с миром
+### Working with World
 
 ```java
-// Получить мир из Player
+// Get world from Player
 World world = player.getWorld();
 
-// Выполнить код в потоке мира (thread-safe)
+// Execute code in world thread (thread-safe)
 world.execute(() -> {
-    // Безопасный код
+    // Safe code here
 });
 
-// Имя мира
+// World name
 String worldName = world.getName();
 ```
 
 ---
 
-## Советы и подводные камни
+## Tips and Pitfalls
 
 ### Thread Safety
 
 ```java
-// НЕПРАВИЛЬНО - может вызвать race condition
+// WRONG - may cause race condition
 public void onCommand(CommandContext ctx) {
     Player player = (Player) ctx.sender();
     PlayerRef ref = player.getPlayerRef();
-    ref.sendMessage(...); // Может быть небезопасно
+    ref.sendMessage(...); // May be unsafe
 }
 
-// ПРАВИЛЬНО - выполнение в потоке мира
+// CORRECT - execute in world thread
 public void onCommand(CommandContext ctx) {
     Player player = (Player) ctx.sender();
     Ref<EntityStore> reference = player.getReference();
@@ -436,53 +436,53 @@ public void onCommand(CommandContext ctx) {
 
     world.execute(() -> {
         PlayerRef playerRef = store.getComponent(reference, PlayerRef.getComponentType());
-        playerRef.sendMessage(...); // Безопасно
+        playerRef.sendMessage(...); // Safe
     });
 }
 ```
 
-### Deprecated методы
+### Deprecated Methods
 
-Многие методы помечены как deprecated, но работают. Основные:
-- `player.getUuid()` → работает
-- `player.getPlayerRef()` → работает
-- `world.getPlayers()` → работает
+Many methods are marked deprecated but still work:
+- `player.getUuid()` → works
+- `player.getPlayerRef()` → works
+- `world.getPlayers()` → works
 
-### Доступные иконки маркеров
+### Available Marker Icons
 
-Встроенные иконки (из клиента):
-- `Player.png` - иконка игрока
-- `Spawn.png` - точка спавна
-- `Death.png` - место смерти
-- `Home.png` - дом/респавн
-- `Warp.png` - варп/телепорт
+Built-in icons (from client):
+- `Player.png` - player icon
+- `Spawn.png` - spawn point
+- `Death.png` - death location
+- `Home.png` - home/respawn
+- `Warp.png` - warp/teleport
 
-Цвет иконки изменить нельзя без клиентских модификаций.
+Icon color cannot be changed without client-side modifications.
 
 ### CustomUIHud
 
-**НЕ РАБОТАЕТ** без клиентских ассетов! Требует `.ui` файлы в клиенте.
+**DOES NOT WORK** without client assets! Requires `.ui` files on client.
 
 ```java
-// Это вызовет краш клиента:
+// This will crash the client:
 builder.append("body", "<div>Test</div>");
 
-// CustomUIHud работает только с существующими .ui шаблонами клиента
+// CustomUIHud only works with existing client .ui templates
 ```
 
-### Персистентность данных
+### Data Persistence
 
-Hytale не предоставляет встроенного API для сохранения данных плагина. Используйте JSON:
+Hytale doesn't provide a built-in API for plugin data storage. Use JSON:
 
 ```java
-// Сохранение
+// Save
 Path file = Path.of("mods", "MyPlugin", "data.json");
 Files.createDirectories(file.getParent());
 try (Writer w = new FileWriter(file.toFile())) {
     new Gson().toJson(data, w);
 }
 
-// Загрузка
+// Load
 try (Reader r = new FileReader(file.toFile())) {
     data = new Gson().fromJson(r, DataClass.class);
 }
@@ -490,39 +490,39 @@ try (Reader r = new FileReader(file.toFile())) {
 
 ---
 
-## Полезные классы
+## Useful Classes
 
-| Класс | Описание |
-|-------|----------|
-| `JavaPlugin` | Базовый класс плагина |
-| `CommandBase` | Синхронная команда |
-| `AbstractAsyncCommand` | Асинхронная команда |
-| `Player` | Сущность игрока |
-| `PlayerRef` | Ссылка на игрока (основной API) |
-| `World` | Игровой мир |
-| `WorldMapTracker` | Трекер карты игрока |
-| `WorldMapManager` | Менеджер карты мира |
-| `MapMarker` | Маркер на карте/компасе |
-| `Universe` | Глобальный доступ к серверу |
-| `Message` | Создание сообщений с форматированием |
+| Class | Description |
+|-------|-------------|
+| `JavaPlugin` | Base plugin class |
+| `CommandBase` | Synchronous command |
+| `AbstractAsyncCommand` | Asynchronous command |
+| `Player` | Player entity |
+| `PlayerRef` | Player reference (main API) |
+| `World` | Game world |
+| `WorldMapTracker` | Player's map tracker |
+| `WorldMapManager` | World map manager |
+| `MapMarker` | Map/compass marker |
+| `Universe` | Global server access |
+| `Message` | Create formatted messages |
 
 ---
 
-## Сборка и деплой
+## Build and Deploy
 
 ```bash
-# Сборка
+# Build
 ./gradlew build
 
-# JAR будет в build/libs/MyPlugin-1.0.0.jar
+# JAR will be in build/libs/MyPlugin-1.0.0.jar
 
-# Копирование на сервер
+# Copy to server
 scp build/libs/MyPlugin-1.0.0.jar user@server:/opt/hytale-data/mods/
 
-# Перезапуск сервера
+# Restart server
 docker restart hytale
 ```
 
 ---
 
-*Гайд основан на разработке SLParty плагина. Hytale API может измениться в будущих версиях.*
+*Guide based on SLParty plugin development. Hytale API may change in future versions.*

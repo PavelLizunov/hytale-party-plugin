@@ -80,7 +80,7 @@ SLParty/
 ├── src/main/java/com/sl/party/
 │   ├── SLPartyPlugin.java              # Main plugin class
 │   ├── cache/
-│   │   └── PartyCache.java             # In-memory party cache
+│   │   └── PartyCache.java             # In-memory party cache with persistence
 │   ├── command/
 │   │   ├── PartyCommand.java           # Main command handler
 │   │   └── impl/                       # Subcommand implementations
@@ -104,6 +104,8 @@ SLParty/
 │       └── PartyStorage.java               # JSON persistence
 ├── src/main/resources/
 │   └── manifest.json                       # Plugin manifest
+├── docs/
+│   └── HYTALE_SERVER_MODDING_GUIDE.md      # Server modding guide
 ├── libs/                                   # Hytale server JAR (not committed)
 ├── build.gradle.kts
 └── settings.gradle.kts
@@ -124,6 +126,10 @@ Party members are displayed on the compass using the `WorldMapManager.MarkerProv
 - Parties persist across server restarts
 - Players remain in their party after disconnecting and reconnecting
 - Data is saved automatically on any party change
+
+## Documentation
+
+See [Hytale Server-Side Modding Guide](docs/HYTALE_SERVER_MODDING_GUIDE.md) for a comprehensive guide on creating Hytale server plugins.
 
 ## Known Limitations
 
